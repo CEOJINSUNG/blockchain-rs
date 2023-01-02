@@ -1,6 +1,33 @@
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
+use sha2::{Sha256, Digest};
 use std::vec::Vec;
+
+// 블록을 찾는데 해시하기 위해 필요한 데이터 시작점
+const DIFFICULTY_PREFIX: &str = "00";
+
+fn hash_to_binary_representation(hash: &[u8]) -> String {
+    let mut res: String = String::default();
+    hash.iter().for_each(|char| {
+        res.push_str(&format!("{:b}", char));
+    });
+
+    res
+}
+
+fn calculate_hash(id: u64, timestamp: i64, previous_hash: &str, data: &str, nonce: u64) -> Vec<u8> {
+    let data = serde_json::json!({
+        "id": id,
+        "previous_hash": previous_hash,
+        "data": data,
+        "timestamp": timestamp,
+        "nonce": nonce
+    });
+
+    let mut hasher = Sha256::new();
+    hasher.update(data.to_string().as_bytes());
+    hasher.finalize().as_slice().to_owned()
+}
 
 pub struct App {
     pub blocks: Vec<Block>,
@@ -32,5 +59,25 @@ impl App{
         };
 
         self.blocks.push(genesis_block);
+    }
+
+    fn try_add_block(&mut self, block: Block) {
+        let latest_block = self.blocks.last().expect("there is at least one block");
+        
+    }
+
+    // 유효한 블록인지 확인
+    fn is_block_valid(&self, block: &Block, previous_block: &Block) -> bool {
+        if block.previous_hash != previous_block.hash {
+            return false;
+        } else if !hash_to_binary_representation(&hex::decode(&block.hash).expect("can decode from hex")).starts_with(DIFFICULTY_PREFIX) {
+            return false;
+        } else if block.id != previous_block.id + 1 {
+            return false;
+        } else if hex::encode(calculate_hash(block.id, block.timestamp, &block.previous_hash, &block.data, block.nonce)) != block.hash {
+            return false;
+        }
+
+        true
     }
 }
