@@ -158,13 +158,15 @@ fn mine_block(id: u64, timestamp: i64, previous_hash: &str, data: &str) -> (u64,
 
 impl Block {
     fn new(id: u64, previous_hash: String, data: String) -> Self {
+        let (nonce, hash) = mine_block(id, Utc::now().timestamp(), &previous_hash, &data);
+
         Self {
             id,
             previous_hash,
             data,
             timestamp: Utc::now().timestamp(),
-            nonce: 0,
-            hash: String::default(),
+            nonce,
+            hash,
         }
     }
 }
