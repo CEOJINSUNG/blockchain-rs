@@ -1,4 +1,5 @@
 use chrono::Utc;
+use log::info;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{error, vec::Vec};
@@ -113,7 +114,7 @@ impl App {
     fn choose_chain(&mut self, local: Vec<Block>, remote: Vec<Block>) -> Vec<Block> {
         let is_local_valid = self.is_chain_valid(&local);
         let is_remote_valid = self.is_chain_valid(&remote);
-        
+
         if is_local_valid && is_remote_valid {
             if local.len() > remote.len() {
                 local
@@ -126,6 +127,44 @@ impl App {
             local
         } else {
             panic!("both chains are invalid");
+        }
+    }
+}
+
+fn mine_block(id: u64, timestamp: i64, previous_hash: &str, data: &str) -> (u64, String) {
+    info!("mining block...");
+    let mut nonce = 0;
+
+    loop {
+        if nonce % 100000 == 0 {
+            info!("nonce: {}", nonce);
+        }
+
+        let hash = calculate_hash(id, timestamp, previous_hash, data, nonce);
+        let binary_hash = hash_to_binary_representation(&hash);
+        if binary_hash.starts_with(DIFFICULTY_PREFIX) {
+            info!(
+                "mined! nonce: {}, hash: {}, binary hash: {}",
+                nonce,
+                hex::encode(&hash),
+                binary_hash
+            );
+            return (nonce, hex::encode(hash));
+        }
+
+        nonce += 1;
+    }
+}
+
+impl Block {
+    fn new(id: u64, previous_hash: String, data: String) -> Self {
+        Self {
+            id,
+            previous_hash,
+            data,
+            timestamp: Utc::now().timestamp(),
+            nonce: 0,
+            hash: String::default(),
         }
     }
 }
