@@ -2,7 +2,7 @@ use chrono::Utc;
 use log::info;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{error, vec::Vec};
+use std::vec::Vec;
 
 // 블록을 찾는데 해시하기 위해 필요한 데이터 시작점
 const DIFFICULTY_PREFIX: &str = "00";
